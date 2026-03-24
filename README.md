@@ -176,4 +176,4 @@ MIT License — see [LICENSE](LICENSE) for details.
 
 ---
 
-*Built as a portfolio project for entry-level Security Auditing roles.*
+
