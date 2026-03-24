@@ -77,6 +77,9 @@ The generated PDF includes:
 - Python 3.8+
 - Linux system (Ubuntu/Debian recommended)
 - `sudo` access (required for shadow file and some checks)
+- `fail2ban` or `sshguard` installed (for Intrusion Prevention check)
+- `rkhunter` or `chkrootkit` installed (for Rootkit Hunter check)
+- `sysctl` available (pre-installed on most Linux systems)
 
 ### Setup
 
