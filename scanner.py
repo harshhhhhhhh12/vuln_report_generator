@@ -389,6 +389,132 @@ def check_suid_sgid() -> List[Finding]:
     return findings
 
 
+# ── Check 8: Intrusion Prevention Systems ─────────────────────────────────────
+def check_ips() -> List[Finding]:
+    findings = []
+    rc1, out1, _ = _run("systemctl is-active fail2ban 2>/dev/null")
+    rc2, out2, _ = _run("systemctl is-active sshguard 2>/dev/null")
+    
+    if rc1 == 0 and "active" in out1.lower():
+        findings.append(Finding(
+            check="Intrusion Prevention",
+            severity=INFO,
+            title="fail2ban is active",
+            description="fail2ban is running and protecting services.",
+            recommendation="Review fail2ban jail status periodically: sudo fail2ban-client status",
+            raw_output="fail2ban: " + out1,
+        ))
+        return findings
+
+    if rc2 == 0 and "active" in out2.lower():
+        findings.append(Finding(
+            check="Intrusion Prevention",
+            severity=INFO,
+            title="sshguard is active",
+            description="sshguard is running and protecting services.",
+            recommendation="Review sshguard logs periodically.",
+            raw_output="sshguard: " + out2,
+        ))
+        return findings
+
+    findings.append(Finding(
+        check="Intrusion Prevention",
+        severity=HIGH,
+        title="No intrusion prevention system (IPS) found active",
+        description="Neither fail2ban nor sshguard appears to be running. The system is vulnerable to brute-force attacks.",
+        recommendation="Install and enable an IPS: sudo apt install fail2ban && sudo systemctl enable --now fail2ban",
+    ))
+    return findings
+
+
+# ── Check 9: Kernel Parameters ────────────────────────────────────────────────
+def check_sysctl() -> List[Finding]:
+    findings = []
+    params = [
+        ("kernel.randomize_va_space", r"^kernel\.randomize_va_space\s*=\s*(2)", HIGH,
+         "ASLR is disabled or partially enabled. This makes exploitation of memory corruption vulnerabilities easier.",
+         "Enable full ASLR: sysctl -w kernel.randomize_va_space=2"),
+        
+        ("net.ipv4.ip_forward", r"^net\.ipv4\.ip_forward\s*=\s*(0)", MEDIUM,
+         "IP forwarding is enabled. Unless this system acts as a router, this can be exploited for man-in-the-middle attacks.",
+         "Disable IP forwarding: sysctl -w net.ipv4.ip_forward=0"),
+         
+        ("net.ipv4.conf.all.accept_redirects", r"^net\.ipv4\.conf\.all\.accept_redirects\s*=\s*(0)", MEDIUM,
+         "Accepting ICMP redirects is enabled. This can allow attackers to alter routing tables maliciously.",
+         "Disable ICMP redirects: sysctl -w net.ipv4.conf.all.accept_redirects=0"),
+    ]
+
+    for name, expected_pattern, sev, desc, rec in params:
+        rc, out, _ = _run(f"sysctl {name} 2>/dev/null")
+        if rc == 0:
+            if not re.search(expected_pattern, out):
+                findings.append(Finding(
+                    check="Kernel Parameters",
+                    severity=sev,
+                    title=f"Insecure sysctl parameter: {name}",
+                    description=desc,
+                    recommendation=rec,
+                    raw_output=out,
+                ))
+            else:
+                findings.append(Finding(
+                    check="Kernel Parameters",
+                    severity=INFO,
+                    title=f"Secure sysctl parameter: {name}",
+                    description=f"{name} is configured securely.",
+                    recommendation="No action needed.",
+                    raw_output=out,
+                ))
+        else:
+            findings.append(Finding(
+                check="Kernel Parameters",
+                severity=INFO,
+                title=f"Could not read {name}",
+                description=f"Failed to read sysctl parameter {name}.",
+                recommendation="Check manually with sysctl.",
+            ))
+
+    return findings
+
+
+# ── Check 10: Rootkit Hunter ──────────────────────────────────────────────────
+def check_rootkit_hunter() -> List[Finding]:
+    findings = []
+    rc1, out1, _ = _run("which rkhunter 2>/dev/null")
+    rc2, out2, _ = _run("which chkrootkit 2>/dev/null")
+    
+    if rc1 == 0 and out1:
+        findings.append(Finding(
+            check="Rootkit Hunter",
+            severity=INFO,
+            title="rkhunter is installed",
+            description="Rootkit Hunter (rkhunter) is available on the system.",
+            recommendation="Run periodic scans: sudo rkhunter --check --sk",
+            raw_output=out1,
+        ))
+        return findings
+
+    if rc2 == 0 and out2:
+        findings.append(Finding(
+            check="Rootkit Hunter",
+            severity=INFO,
+            title="chkrootkit is installed",
+            description="chkrootkit is available on the system.",
+            recommendation="Run periodic scans: sudo chkrootkit",
+            raw_output=out2,
+        ))
+        return findings
+
+    findings.append(Finding(
+        check="Rootkit Hunter",
+        severity=MEDIUM,
+        title="No rootkit scanner installed",
+        description="Standard rootkit detection tools (rkhunter, chkrootkit) are missing.",
+        recommendation="Install a rootkit scanner: sudo apt install rkhunter",
+    ))
+    return findings
+
+
 # ── Master runner ─────────────────────────────────────────────────────────────
 def run_all_checks(verbose: bool = True) -> ScanResult:
     _, hostname, _ = _run("hostname")
@@ -411,6 +537,9 @@ def run_all_checks(verbose: bool = True) -> ScanResult:
         ("Empty Passwords",      check_empty_passwords),
         ("Firewall Status",      check_firewall),
         ("SUID/SGID Binaries",   check_suid_sgid),
+        ("Intrusion Prevention", check_ips),
+        ("Kernel Parameters",    check_sysctl),
+        ("Rootkit Hunter",       check_rootkit_hunter),
     ]
 
     for name, fn in checks:
