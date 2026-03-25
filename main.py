@@ -68,6 +68,10 @@ def print_console_results(result):
 
 
 def main():
+    if not sys.platform.startswith("linux"):
+        print(f"{BOLD}\033[91m[ERROR] This tool must be run on Linux. Current OS: {sys.platform}{RESET}")
+        sys.exit(1)
+
     parser = argparse.ArgumentParser(
         description="Linux Vulnerability Report Generator",
         formatter_class=argparse.RawDescriptionHelpFormatter,

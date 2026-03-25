@@ -35,6 +35,8 @@
 | **Console Output** | ANSI colour-coded terminal output for quick review |
 | **CLI Flags** | `--output`, `--quiet`, `--console-only` |
 | **No External APIs** | Fully offline — uses only standard Linux commands + Python |
+| **Robust Execution** | Strict Linux OS validation and safe subprocess timeout handling |
+| **Test Coverage** | Comprehensive unit testing utilizing `unittest.mock` |
 
 ---
 
@@ -75,7 +77,7 @@ The generated PDF includes:
 ### Prerequisites
 
 - Python 3.8+
-- Linux system (Ubuntu/Debian recommended)
+- Linux system (Ubuntu/Debian recommended) — **Note: This tool is strictly for Linux and will not run on macOS or Windows.**
 - `sudo` access (required for shadow file and some checks)
 - `fail2ban` or `sshguard` installed (for Intrusion Prevention check)
 - `rkhunter` or `chkrootkit` installed (for Rootkit Hunter check)
@@ -143,6 +145,7 @@ vuln_report_generator/
 ├── main.py              # CLI entry point — orchestrates scan + report
 ├── scanner.py           # All 10 security check functions
 ├── report.py            # PDF generator (ReportLab Platypus)
+├── test_scanner.py      # Unit tests with subprocess mocking
 ├── requirements.txt     # Python dependencies
 ├── vuln_report_demo.pdf # Sample output report
 ├── .gitignore           # Git ignore rules
@@ -162,6 +165,7 @@ This project covers skills directly relevant to **Security Auditing / SOC Analys
 - **Clean CLI tooling** with `argparse`
 - **Structured data modelling** with Python `dataclasses`
 - **Regex parsing** of command output
+- **Robust Mock Testing** utilizing `unittest.mock` to validate system-level interactions without side effects
 
 ---
 
