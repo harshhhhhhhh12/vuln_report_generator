@@ -1,0 +1,36 @@
+how to run this linux scanner
+
+this tool only works on linux because it reads real system files. if you're on a normal windows pc, you have to install "wsl" (ubuntu) first.
+
+step 0: install wsl (skip if you already have it or are on a mac/linux pc)
+- open your start menu, type "powershell", right-click on it, and select "run as administrator".
+- type this exactly and hit enter: wsl --install
+- wait for it to finish and restart your computer.
+- when you log back in, open your start menu, type "ubuntu", and open it. it will ask you to create a quick username and password.
+
+once you have your ubuntu terminal open, follow these steps exactly:
+
+1. download the code
+git clone https://github.com/harshhhhhhhh12/vuln_report_generator.git
+cd vuln_report_generator
+
+2. install the system tools we need
+(it will ask for your ubuntu password here)
+sudo apt update && sudo apt install -y python3 python3-pip python3-venv ufw ss
+
+3. setup the python environment so it doesnt mess with your pc
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+4. run the scan
+(you have to use sudo because reading security configs like password files requires root access)
+sudo venv/bin/python3 main.py
+
+5. view your report
+it will generate a pdf right there in the folder.
+to see it on windows, just type this exactly: explorer.exe .
+a normal folder will pop open and you can double click the pdf to read it.
+
+troubleshooting:
+- if it says "must be run on linux", you're probably running it in cmd or powershell instead of the ubuntu app.
